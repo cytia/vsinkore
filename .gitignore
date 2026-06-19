@@ -2,3 +2,12 @@ node_modules/
 dist/
 out/
 *.vsix
+
+# Secrets — never commit. The pre-commit hook also blocks these.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

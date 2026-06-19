@@ -1,0 +1,29 @@
+#!/bin/sh
+# Block secrets from entering history. Scans only staged files (added/copied/
+# modified), so it never trips on ignored or untracked working-tree files.
+#
+# Installed via `core.hooksPath` (see package.json "prepare"); versioned here so
+# every clone gets it after `npm install`.
+
+# Filenames that must never be committed, matched on the basename.
+name_pattern='(^\.env($|\..*)|\.pem$|\.key$|\.p12$|\.pfx$)'
+# Allow documented templates that intentionally carry no real secrets.
+allow_pattern='(\.env\.example$|\.example\.env$)'
+
+blocked=''
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+for path in $staged; do
+  base=$(basename "$path")
+  echo "$base" | grep -Eq "$allow_pattern" && continue
+  echo "$base" | grep -Eq "$name_pattern" && blocked="$blocked  $path\n"
+done
+
+if [ -n "$blocked" ]; then
+  printf '\033[31mpre-commit blocked: secret-like files are staged.\033[0m\n'
+  printf "$blocked"
+  printf 'Unstage them (git restore --staged <file>) or rename if intentional.\n'
+  exit 1
+fi
+
+exit 0

@@ -28,6 +28,7 @@
     ]
   },
   "scripts": {
+    "prepare": "git config core.hooksPath scripts/git-hooks",
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit"

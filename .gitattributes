@@ -1,0 +1,2 @@
+# Git hooks run under sh; CRLF line endings break the shebang. Force LF.
+scripts/git-hooks/* text eol=lf
