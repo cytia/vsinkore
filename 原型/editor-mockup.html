@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>vsinkore — editor visual mockup</title>
+<!--
+  Static visual prototype for the vsinkore VSCode Markdown WYSIWYG editor.
+  Goal (per D0-5): look like the host IDE, NOT have a design voice of its own.
+  All colors map to simulated --vscode-* tokens so the real webview can drop in
+  VSCode's injected variables with no visual change. Two token sets (Dark+ /
+  Light+) are toggled at the page root to preview both themes; the real plugin
+  inherits these from the host instead of defining them.
+  This file is a throwaway reference. It does not enter src/, media/, or dist/.
+-->
+<style>
+  /* ---- Simulated VSCode design tokens (Dark+ default) ----
+     In the real webview these names are injected by VSCode. Here we hardcode
+     the Dark+ / Light+ palette values so the mockup previews faithfully. */
+  :root,
+  [data-vscode-theme="dark"] {
+    --vscode-editor-background: #1e1e1e;
+    --vscode-editor-foreground: #d4d4d4;
+    --vscode-foreground: #cccccc;
+    --vscode-descriptionForeground: #9d9d9d;
+    --vscode-editorLineNumber-foreground: #858585;
+    --vscode-editorLineNumber-activeForeground: #c6c6c6;
+    --vscode-editor-lineHighlightBackground: #2a2a2a;
+    --vscode-textLink-foreground: #4daafc;
+    --vscode-textLink-activeForeground: #4daafc;
+    --vscode-textBlockQuote-background: #2a2a2a;
+    --vscode-textBlockQuote-border: #4d4d4d;
+    --vscode-textCodeBlock-background: #0d0d0d;
+    --vscode-textPreformat-foreground: #ce9178;
+    --vscode-textPreformat-background: #2a2a2a;
+    --vscode-textSeparator-foreground: #3c3c3c;
+    --vscode-panel-border: #2b2b2b;
+    --vscode-widget-border: #454545;
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
+    --vscode-editorWidget-background: #252526;
+    --vscode-editorWidget-foreground: #cccccc;
+    --vscode-editorHoverWidget-background: #252526;
+    --vscode-toolbar-hoverBackground: #383838;
+    --vscode-menu-background: #252526;
+    --vscode-menu-foreground: #cccccc;
+    --vscode-menu-selectionBackground: #04395e;
+    --vscode-menu-selectionForeground: #ffffff;
+    --vscode-menu-separatorBackground: #454545;
+    --vscode-editor-selectionBackground: #264f78;
+    --vscode-focusBorder: #007fd4;
+    --vscode-button-background: #0e639c;
+    --vscode-button-foreground: #ffffff;
+    --vscode-keybindingLabel-foreground: #cccccc;
+
+    /* Editor font stack mirrors VSCode defaults */
+    --vscode-editor-font-family: Consolas, "Courier New", monospace;
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC",
+      "Segoe UI", system-ui, "Ubuntu", "Droid Sans", sans-serif;
+    --vscode-editor-font-size: 14px;
+
+    /* Simulated Shiki dark-plus token colors for the code block sample */
+    --shk-comment: #6a9955;
+    --shk-keyword: #569cd6;
+    --shk-string: #ce9178;
+    --shk-function: #dcdcaa;
+    --shk-number: #b5cea8;
+    --shk-type: #4ec9b0;
+    --shk-punct: #d4d4d4;
+  }
+
+  [data-vscode-theme="light"] {
+    --vscode-editor-background: #ffffff;
+    --vscode-editor-foreground: #000000;
+    --vscode-foreground: #3b3b3b;
+    --vscode-descriptionForeground: #717171;
+    --vscode-editorLineNumber-foreground: #237893;
+    --vscode-editorLineNumber-activeForeground: #0b216f;
+    --vscode-editor-lineHighlightBackground: #f5f5f5;
+    --vscode-textLink-foreground: #006ab1;
+    --vscode-textLink-activeForeground: #006ab1;
+    --vscode-textBlockQuote-background: #f2f2f2;
+    --vscode-textBlockQuote-border: #c8c8c8;
+    --vscode-textCodeBlock-background: #f5f5f5;
+    --vscode-textPreformat-foreground: #a31515;
+    --vscode-textPreformat-background: #eeeeee;
+    --vscode-textSeparator-foreground: #d4d4d4;
+    --vscode-panel-border: #e0e0e0;
+    --vscode-widget-border: #c8c8c8;
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.16);
+    --vscode-editorWidget-background: #f3f3f3;
+    --vscode-editorWidget-foreground: #3b3b3b;
+    --vscode-editorHoverWidget-background: #f3f3f3;
+    --vscode-toolbar-hoverBackground: #e0e0e0;
+    --vscode-menu-background: #ffffff;
+    --vscode-menu-foreground: #3b3b3b;
+    --vscode-menu-selectionBackground: #0060c0;
+    --vscode-menu-selectionForeground: #ffffff;
+    --vscode-menu-separatorBackground: #d4d4d4;
+    --vscode-editor-selectionBackground: #add6ff;
+    --vscode-focusBorder: #0090f1;
+    --vscode-button-background: #007acc;
+    --vscode-button-foreground: #ffffff;
+    --vscode-keybindingLabel-foreground: #555555;
+
+    --shk-comment: #008000;
+    --shk-keyword: #0000ff;
+    --shk-string: #a31515;
+    --shk-function: #795e26;
+    --shk-number: #098658;
+    --shk-type: #267f99;
+    --shk-punct: #000000;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    font-family: var(--vscode-font-family);
+    /* VSCode editor surfaces use near-zero corner radius — shape lock */
+    font-size: 14px;
+  }
+
+  /* ---- Preview-only chrome (the theme toggle bar) — NOT part of the plugin ---- */
+  .preview-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--vscode-editorWidget-background);
+    border-bottom: 1px solid var(--vscode-panel-border);
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+  }
+  .preview-bar strong { color: var(--vscode-foreground); font-weight: 600; }
+  .preview-bar button {
+    font: inherit;
+    padding: 3px 10px;
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .preview-bar .note { margin-left: auto; }
+
+  /* ===== Editor surface ===== */
+  .editor {
+    display: grid;
+    grid-template-columns: 56px 1fr;  /* line-number gutter + content */
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Left source-line gutter (D0-7): source-line numbers, not view-block index */
+  .gutter {
+    text-align: right;
+    padding: 24px 12px 24px 0;
+    font-family: var(--vscode-editor-font-family);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--vscode-editorLineNumber-foreground);
+    user-select: none;
+    border-right: 1px solid var(--vscode-panel-border);
+  }
+  .gutter span { display: block; }
+  .gutter .active { color: var(--vscode-editorLineNumber-activeForeground); }
+
+  .content {
+    padding: 24px 28px 96px 28px;
+    line-height: 1.6;
+    min-width: 0;
+  }
+
+  /* ---- Block typography (rhythm borrowed from desktop CSS, colors from tokens) ---- */
+  .content h1, .content h2, .content h3,
+  .content h4, .content h5, .content h6 {
+    color: var(--vscode-editor-foreground);
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 1.4em 0 0.5em;
+  }
+  .content h1 { font-size: 1.85em; margin-top: 0; border-bottom: 1px solid var(--vscode-textSeparator-foreground); padding-bottom: 0.25em; }
+  .content h2 { font-size: 1.5em; border-bottom: 1px solid var(--vscode-textSeparator-foreground); padding-bottom: 0.2em; }
+  .content h3 { font-size: 1.25em; }
+  .content h4 { font-size: 1.05em; }
+  .content h5 { font-size: 0.95em; color: var(--vscode-descriptionForeground); }
+  .content h6 { font-size: 0.9em; color: var(--vscode-descriptionForeground); }
+
+  .content p { margin: 0.6em 0; }
+  .content strong { font-weight: 600; }
+  .content em { font-style: italic; }
+  .content u { text-decoration: underline; }
+  .content s { text-decoration: line-through; opacity: 0.85; }
+  .content a {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+  }
+  .content a:hover { text-decoration: underline; }
+
+  /* Inline code */
+  .content code:not(pre code) {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 0.9em;
+    color: var(--vscode-textPreformat-foreground);
+    background: var(--vscode-textPreformat-background);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* Blockquote */
+  .content blockquote {
+    margin: 0.8em 0;
+    padding: 0.4em 1em;
+    color: var(--vscode-foreground);
+    background: var(--vscode-textBlockQuote-background);
+    border-left: 4px solid var(--vscode-textBlockQuote-border);
+  }
+  .content blockquote p { margin: 0.2em 0; }
+
+  /* Lists */
+  .content ul, .content ol { margin: 0.6em 0; padding-left: 1.6em; }
+  .content li { margin: 0.2em 0; }
+  .content ul.task { list-style: none; padding-left: 0.2em; }
+  .content ul.task li { display: flex; align-items: flex-start; gap: 0.5em; }
+  .content ul.task input { margin-top: 0.35em; accent-color: var(--vscode-button-background); }
+
+  /* Horizontal rule */
+  .content hr {
+    border: none;
+    border-top: 1px solid var(--vscode-textSeparator-foreground);
+    margin: 1.6em 0;
+  }
+
+  /* Table */
+  .content table {
+    border-collapse: collapse;
+    margin: 0.9em 0;
+    font-size: 0.95em;
+    width: 100%;
+  }
+  .content th, .content td {
+    border: 1px solid var(--vscode-widget-border);
+    padding: 0.4em 0.8em;
+    text-align: left;
+  }
+  .content th {
+    background: var(--vscode-editorWidget-background);
+    font-weight: 600;
+  }
+
+  /* Math (rendered look approximated; real plugin uses KaTeX) */
+  .content .math-inline {
+    font-family: "Cambria Math", "Latin Modern Math", serif;
+    font-style: italic;
+  }
+  .content .math-block {
+    display: block;
+    text-align: center;
+    font-family: "Cambria Math", "Latin Modern Math", serif;
+    font-style: italic;
+    font-size: 1.1em;
+    margin: 1em 0;
+    color: var(--vscode-editor-foreground);
+  }
+  .content .footnote-ref {
+    font-size: 0.75em;
+    vertical-align: super;
+    color: var(--vscode-textLink-foreground);
+  }
+
+  /* ---- Code block (D0-8): Shiki-style highlight + header with lang + copy ---- */
+  .codeblock {
+    margin: 1em 0;
+    background: var(--vscode-textCodeBlock-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .codeblock .cb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 10px;
+    background: var(--vscode-editorWidget-background);
+    border-bottom: 1px solid var(--vscode-panel-border);
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+  }
+  .codeblock .cb-lang {
+    font-family: var(--vscode-editor-font-family);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+  }
+  .codeblock .cb-copy {
+    font: inherit;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .codeblock .cb-copy:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+    color: var(--vscode-foreground);
+  }
+  .codeblock pre {
+    margin: 0;
+    padding: 12px 14px;
+    overflow-x: auto;
+  }
+  .codeblock pre code {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--vscode-editor-foreground);
+  }
+  /* Simulated Shiki token classes (real plugin gets these from Shiki output) */
+  .tok-comment { color: var(--shk-comment); font-style: italic; }
+  .tok-keyword { color: var(--shk-keyword); }
+  .tok-string { color: var(--shk-string); }
+  .tok-function { color: var(--shk-function); }
+  .tok-number { color: var(--shk-number); }
+  .tok-type { color: var(--shk-type); }
+  .tok-punct { color: var(--shk-punct); }
+
+  /* Simulated text selection to anchor the bubble toolbar */
+  .sel {
+    background: var(--vscode-editor-selectionBackground);
+    border-radius: 2px;
+  }
+
+  /* ===== Bubble toolbar (self-written UI, VSCode tokens) ===== */
+  .bubble {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    padding: 3px;
+    background: var(--vscode-editorWidget-background);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 5px;
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+    z-index: 5;
+  }
+  .bubble button {
+    font: inherit;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 6px;
+    color: var(--vscode-foreground);
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .bubble button:hover { background: var(--vscode-toolbar-hoverBackground); }
+  .bubble button.on { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-editor-foreground); }
+  .bubble .b-bold { font-weight: 700; }
+  .bubble .b-italic { font-style: italic; }
+  .bubble .b-under { text-decoration: underline; }
+  .bubble .b-strike { text-decoration: line-through; }
+  .bubble .b-code { font-family: var(--vscode-editor-font-family); }
+  .bubble .sep {
+    width: 1px;
+    height: 16px;
+    margin: 0 3px;
+    background: var(--vscode-menu-separatorBackground);
+  }
+  .bubble .swatch {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--vscode-widget-border);
+  }
+
+  /* ===== Context (right-click) menu ===== */
+  .ctxmenu {
+    position: absolute;
+    min-width: 220px;
+    padding: 4px 0;
+    background: var(--vscode-menu-background);
+    color: var(--vscode-menu-foreground);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 5px;
+    box-shadow: 0 2px 12px var(--vscode-widget-shadow);
+    font-size: 13px;
+    z-index: 6;
+  }
+  .ctxmenu .item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 14px;
+    cursor: pointer;
+  }
+  .ctxmenu .item:hover {
+    background: var(--vscode-menu-selectionBackground);
+    color: var(--vscode-menu-selectionForeground);
+  }
+  .ctxmenu .item .kbd {
+    color: var(--vscode-keybindingLabel-foreground);
+    font-size: 11px;
+    margin-left: 24px;
+  }
+  .ctxmenu .item:hover .kbd { color: var(--vscode-menu-selectionForeground); }
+  .ctxmenu .item.has-sub::after { content: "›"; opacity: 0.7; }
+  .ctxmenu .divider {
+    height: 1px;
+    margin: 4px 0;
+    background: var(--vscode-menu-separatorBackground);
+  }
+
+  /* Section captions in this preview (not part of the plugin) */
+  .demo-label {
+    max-width: 1000px;
+    margin: 28px auto 0;
+    padding: 0 28px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--vscode-descriptionForeground);
+  }
+  .stage {
+    position: relative;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body data-vscode-theme="dark">
+
+  <div class="preview-bar">
+    <strong>vsinkore</strong>
+    <span>editor visual mockup — simulated VSCode tokens</span>
+    <button onclick="toggleTheme()" id="themeBtn">Switch to Light+</button>
+    <span class="note">Preview-only chrome. The real plugin inherits these tokens from VSCode.</span>
+  </div>
+
+  <!-- ===== Main editor surface: gutter + WYSIWYG content ===== -->
+  <div class="editor">
+    <!-- Source-line gutter (D0-7) aligned to top of each top-level block -->
+    <div class="gutter">
+      <span>1</span>
+      <span>3</span>
+      <span class="active">5</span>
+      <span>7</span>
+      <span>9</span>
+      <span>11</span>
+      <span>13</span>
+      <span>15</span>
+      <span>18</span>
+      <span>24</span>
+      <span>31</span>
+      <span>33</span>
+      <span>40</span>
+      <span>42</span>
+    </div>
+
+    <div class="content">
+      <h1>vsinkore Editor</h1>
+      <p>A WYSIWYG Markdown editor that lives inside VSCode. The surface borrows
+        the editor's own typography and colors, so it reads as part of the IDE
+        rather than a separate app.</p>
+
+      <h2>Inline formatting</h2>
+      <p>Text supports <strong>bold</strong>, <em>italic</em>,
+        <code>inline code</code>, <u>underline</u>, <s>strikethrough</s>,
+        <span style="color:#c586c0">colored text</span>, and
+        <a href="#">links</a>. Selecting a run reveals the bubble toolbar.</p>
+
+      <blockquote>
+        <p>Block quotes use the editor's quote tokens for the bar and tinted
+          background, matching the host theme in both light and dark.</p>
+      </blockquote>
+
+      <h3>Lists and tasks</h3>
+      <ul>
+        <li>Unordered item</li>
+        <li>Another item with a nested point
+          <ul><li>Nested detail</li></ul>
+        </li>
+      </ul>
+      <ul class="task">
+        <li><input type="checkbox" checked disabled /> Render existing images read-only</li>
+        <li><input type="checkbox" disabled /> Two-way bridge with WorkspaceEdit</li>
+      </ul>
+
+      <h3>Code block</h3>
+      <div class="codeblock">
+        <div class="cb-header">
+          <span class="cb-lang">typescript</span>
+          <button class="cb-copy">Copy</button>
+        </div>
+<pre><code><span class="tok-comment">// Shiki highlight follows the active VSCode theme</span>
+<span class="tok-keyword">export function</span> <span class="tok-function">activate</span>(<span class="tok-punct">context</span>: <span class="tok-type">ExtensionContext</span>) <span class="tok-punct">{</span>
+  <span class="tok-keyword">const</span> provider <span class="tok-punct">=</span> <span class="tok-keyword">new</span> <span class="tok-function">InkoreEditorProvider</span>(context)<span class="tok-punct">;</span>
+  context<span class="tok-punct">.</span>subscriptions<span class="tok-punct">.</span><span class="tok-function">push</span>(
+    <span class="tok-type">window</span><span class="tok-punct">.</span><span class="tok-function">registerCustomEditorProvider</span>(<span class="tok-string">"inkore.editor"</span>, provider)<span class="tok-punct">,</span>
+  )<span class="tok-punct">;</span>
+  <span class="tok-keyword">return</span> <span class="tok-number">0</span><span class="tok-punct">;</span>
+<span class="tok-punct">}</span></code></pre>
+      </div>
+
+      <h3>Table</h3>
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Headings</td><td>Done</td><td>H1 to H6</td></tr>
+          <tr><td>Code highlight</td><td>Done</td><td>Shiki, theme-following</td></tr>
+          <tr><td>Image insert</td><td>Read-only</td><td>Display existing only</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Math and footnotes</h3>
+      <p>Inline math like <span class="math-inline">e = mc²</span> sits in the
+        text flow, and block math stands on its own line<span class="footnote-ref">[1]</span>:</p>
+      <span class="math-block">∫₀^∞ e<sup>-x²</sup> dx = √π / 2</span>
+
+      <hr />
+      <p>A horizontal rule separates sections above.</p>
+    </div>
+  </div>
+
+  <!-- ===== Bubble toolbar, shown over a simulated selection ===== -->
+  <p class="demo-label">Bubble toolbar (appears over a selection)</p>
+  <div class="stage" style="height:120px;">
+    <p style="position:absolute; top:64px; left:28px; margin:0;">
+      The quick <span class="sel">brown fox jumps</span> over the lazy dog.
+    </p>
+    <div class="bubble" style="top:28px; left:96px;">
+      <button class="b-bold on" title="Bold">B</button>
+      <button class="b-italic" title="Italic">I</button>
+      <button class="b-under" title="Underline">U</button>
+      <button class="b-strike" title="Strikethrough">S</button>
+      <button class="b-code" title="Inline code">&lt;/&gt;</button>
+      <span class="sep"></span>
+      <button title="Text color"><span class="swatch" style="background:#c586c0"></span></button>
+      <button title="Link">🔗</button>
+    </div>
+  </div>
+
+  <!-- ===== Context menu ===== -->
+  <p class="demo-label">Right-click context menu</p>
+  <div class="stage" style="height:300px;">
+    <div class="ctxmenu" style="top:12px; left:28px;">
+      <div class="item">Cut <span class="kbd">Ctrl+X</span></div>
+      <div class="item">Copy <span class="kbd">Ctrl+C</span></div>
+      <div class="item">Paste <span class="kbd">Ctrl+V</span></div>
+      <div class="item">Paste as plain text <span class="kbd">Ctrl+Shift+V</span></div>
+      <div class="divider"></div>
+      <div class="item has-sub">Format</div>
+      <div class="item has-sub">Insert</div>
+      <div class="item has-sub">Turn into</div>
+      <div class="divider"></div>
+      <div class="item">Select all <span class="kbd">Ctrl+A</span></div>
+    </div>
+  </div>
+
+<script>
+  function toggleTheme() {
+    const body = document.body;
+    const isDark = body.getAttribute("data-vscode-theme") === "dark";
+    body.setAttribute("data-vscode-theme", isDark ? "light" : "dark");
+    document.getElementById("themeBtn").textContent =
+      isDark ? "Switch to Dark+" : "Switch to Light+";
+  }
+</script>
+</body>
+</html>
