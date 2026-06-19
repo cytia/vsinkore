@@ -8,6 +8,8 @@ import * as vscode from "vscode";
  * two-way bridge all arrive in later stages.
  */
 export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
+  // Must stay identical to contributes.customEditors[].viewType in package.json,
+  // or the editor silently fails to bind.
   private static readonly viewType = "inkore.editor";
 
   static register(context: vscode.ExtensionContext): vscode.Disposable {

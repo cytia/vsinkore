@@ -13,7 +13,7 @@ const extensionConfig = {
   format: "cjs",
   target: "node20",
   external: ["vscode"],
-  sourcemap: !watch ? false : "inline",
+  sourcemap: watch ? "inline" : false,
   logLevel: "info",
 };
 
@@ -25,7 +25,7 @@ const webviewConfig = {
   platform: "browser",
   format: "iife",
   target: "es2022",
-  sourcemap: !watch ? false : "inline",
+  sourcemap: watch ? "inline" : false,
   logLevel: "info",
 };
 
