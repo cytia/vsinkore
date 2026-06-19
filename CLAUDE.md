@@ -21,7 +21,7 @@ D:\My-Projects\
 
 ## 当前进度
 
-阶段零（方案敲定）完成：形态 / 付费边界 / 仓库落点 / 内核引入方式 / 构建 / 定位（开发者文档场景 + 视觉对齐 VSCode）/ 首版功能范围（含代码块 Shiki 高亮、图片只读、左侧源码行号槽）均已敲定。下一步进阶段一（仓库骨架，F5 起空 webview）。
+阶段一（仓库骨架）完成：`package.json` 注册 `.md` 的 `CustomTextEditorProvider`（viewType `inkore.editor`，priority option 不抢占）、esbuild 双 bundle（extension Node/CJS + webview browser/IIFE）、CSP + nonce + asWebviewUri 链路、launch.json/tasks.json。F5 实跑验证通过（Reopen With Inkore Editor 显示空 webview）。下一步进阶段二（内核跑起来，PoC 只读不回写）。
 
 详见 [学习/阶段工作表.md](学习/阶段工作表.md)（进度 + 首版功能范围表）与 [学习/阶段决策备忘.md](学习/阶段决策备忘.md)（`[D0-1]`~`[D0-8]`）。
 
