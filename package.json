@@ -1,0 +1,41 @@
+{
+  "name": "vsinkore",
+  "displayName": "vsinkore",
+  "description": "WYSIWYG Markdown editing for VSCode, powered by the Inkore editor core.",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "publisher": "inkore",
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "inkore.editor",
+        "displayName": "Inkore Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.125.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}
