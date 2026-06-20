@@ -2,7 +2,7 @@
   "name": "vsinkore",
   "displayName": "vsinkore",
   "description": "WYSIWYG Markdown editing for VSCode, powered by the Inkore editor core.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "license": "UNLICENSED",
   "publisher": "inkore",

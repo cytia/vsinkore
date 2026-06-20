@@ -590,3 +590,25 @@ li[data-type="task-item"][data-checked="true"] .task-checkbox {
   pointer-events: none;
   position: absolute;
 }
+
+/* ─── Images (read-only display, [D0-6] [D4-1]) ──────── */
+.pm-image-wrapper {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.pm-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* Shown by the core's ImageNodeView when a src fails to load. */
+.pm-image-error {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}

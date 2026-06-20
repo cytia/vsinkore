@@ -16,13 +16,20 @@ import {
 } from "../editor-core";
 import { codeHighlightPlugin } from "./codeHighlightPlugin";
 
-// Read-only PoC: images are not persisted ([D0-6]). saveImage is a no-op so the
-// core's imageUploadPlugin has a valid callback but nothing reaches disk.
+// Images are not persisted ([D0-6]): saveImage is a no-op so the core's
+// imageUploadPlugin has a valid callback but pasted/dropped images reach nothing.
 const saveImage: SaveImage = async () => "";
 
-// Stage two stub: relative srcs render as-is. Stage four bridges this through
-// the extension's asWebviewUri so in-vault images actually resolve.
-const toRenderUrl: ToRenderUrl = (_vaultRoot, relPath) => relPath;
+/**
+ * Join an in-doc relative image path onto the webview base URI the extension
+ * resolved (asWebviewUri of the document's folder, [D4-1]). Absolute http(s)/
+ * data srcs are already handled by the core before reaching here; this only
+ * sees relative paths, which resolve against base under vscode-webview://.
+ */
+function joinImageUrl(base: string, relPath: string): string {
+  if (!base) return relPath;
+  return new URL(relPath, base.endsWith("/") ? base : base + "/").toString();
+}
 
 /**
  * Notified after each doc-changing edit. Receives a thunk that serializes the
@@ -40,13 +47,21 @@ export type ChangeHandler = (serialize: () => string) => void;
  * Write-back ([D3]): a doc-changing transaction serializes the new doc and calls
  * `onChange`; the entry forwards it to the extension. The returned view exposes
  * `applyExternal` so the entry can re-render an external document change in place
- * without a remount (preserving plugins/Shiki/scroll).
+ * without a remount (preserving plugins/Shiki/scroll); it also refreshes the
+ * image base in case the document moved.
+ *
+ * `imageBase` is the webview base URI relative image srcs resolve against ([D4-1]).
  */
 export function mountEditor(
   mount: HTMLElement,
   content: string,
+  imageBase: string,
   onChange: ChangeHandler,
-): { view: EditorView; applyExternal: (text: string) => void } {
+): { view: EditorView; applyExternal: (text: string, imageBase: string) => void } {
+  // Mutable so an external update can refresh it; toRenderUrl reads it live.
+  let currentImageBase = imageBase;
+  const toRenderUrl: ToRenderUrl = (_vaultRoot, relPath) =>
+    joinImageUrl(currentImageBase, relPath);
   const baseState = createEditorState({
     content,
     saveImage,
@@ -92,7 +107,8 @@ export function mountEditor(
 
   // Replace the whole doc with an external change. Guarded so the resulting
   // transaction is not echoed back to the extension as a local edit.
-  function applyExternal(text: string): void {
+  function applyExternal(text: string, imageBase: string): void {
+    currentImageBase = imageBase;
     applyingExternal = true;
     try {
       const doc = parseMarkdown(text);

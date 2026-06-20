@@ -23,11 +23,13 @@ D:\My-Projects\
 
 阶段二（内核跑起来，PoC 只读不回写）完成并 F5 验证：webview 接内核 `createEditorState` + 全套 NodeView，extension 推 `document.getText()` → `parseMarkdown` 所见即所得渲染，配色对齐 VSCode；katex/prosemirror CSS 打包不走 CDN；代码块 Shiki 高亮（JS 引擎 + decoration + nonce 色表 + ESM 按需加载语言，跟随明暗主题）`[D0-8]`。内核源码已内联 `src/editor-core/`（断开外部 `file:` 依赖）`[D-inline]`。
 
-阶段三（双向桥：编辑回写 + 外部同步）代码完成、build/tsc 通过，**待 F5 验证**：webview 改动 → `serializeMarkdown`（延迟进防抖）→ `edit` 消息 → extension `WorkspaceEdit` 整文替换；外部改动 → `update` 消息 → `applyExternal` 原地重渲染；防回环走 `lastWrittenText` 文本比对 + webview 侧 `applyingExternal` 标志双层守卫 `[D3-1]`。
+阶段三（双向桥：编辑回写 + 外部同步）完成并 F5 验证：webview 改动 → `serializeMarkdown`（延迟进防抖）→ `edit` 消息 → extension `WorkspaceEdit` 整文替换；外部改动 → `update` 消息 → `applyExternal` 原地重渲染；防回环走 `lastWrittenText` 文本比对 + webview 侧 `applyingExternal` 标志双层守卫 `[D3-1]`。
+
+阶段四（图片只读显示 + 主题对齐）完成并 F5 验证：extension 算文档所在 vault 根的 `asWebviewUri` base 随消息下发，webview 侧 `new URL` 拼相对图片路径；图片根取 workspace folder（vault 根，非文档目录），`localResourceRoots` 同步授权；`saveImage` no-op 不插图；图片样式接 `--vscode-*` 明暗跟随 `[D4-1]`。下一步进阶段五（行号槽 + 交互打磨）。
 
 已知待办：标准 Markdown 脚注定义 `[^1]: 文本` 内核不解析（成因二，内核侧独立任务，见阶段工作表）。
 
-详见 [学习/阶段工作表.md](学习/阶段工作表.md)（进度 + 首版功能范围表）与 [学习/阶段决策备忘.md](学习/阶段决策备忘.md)（`[D0-1]`~`[D3-1]`）。
+详见 [学习/阶段工作表.md](学习/阶段工作表.md)（进度 + 首版功能范围表）与 [学习/阶段决策备忘.md](学习/阶段决策备忘.md)（`[D0-1]`~`[D4-1]`）。
 
 ## 文件规范
 

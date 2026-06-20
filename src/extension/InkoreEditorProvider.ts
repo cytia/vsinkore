@@ -29,13 +29,27 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
   ): void {
     const { webview } = webviewPanel;
+    // In-doc relative image paths resolve against the vault root, i.e. the
+    // workspace folder containing the document — Inkore keeps a single .images/
+    // at the vault root that notes in any subfolder reference ([D4-1]). Falls
+    // back to the document's own folder when the file is opened outside any
+    // workspace. That root must be a localResourceRoot or the webview can't
+    // read its files (工作规范 §六).
+    const imageRoot =
+      vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
+      vscode.Uri.joinPath(document.uri, "..");
     webview.options = {
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(this.context.extensionUri, "dist"),
         vscode.Uri.joinPath(this.context.extensionUri, "media"),
+        imageRoot,
       ],
     };
+
+    // Stable for this editor's lifetime: the webview base URI relative image
+    // srcs are joined onto. Computed once, sent with every init/update ([D4-1]).
+    const imageBase = webview.asWebviewUri(imageRoot).toString();
 
     // Text this provider last wrote to the document. An incoming change whose
     // text matches it is our own echo and must not be pushed back to the webview
@@ -46,7 +60,7 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
       // Push the document text once the webview reports ready, so the init
       // message can't race the script load.
       if (message?.type === "ready") {
-        webview.postMessage({ type: "init", text: document.getText() });
+        webview.postMessage({ type: "init", text: document.getText(), imageBase });
         return;
       }
       if (message?.type === "edit") {
@@ -66,7 +80,7 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
       if (text === lastWrittenText) {
         return; // our own echo
       }
-      webview.postMessage({ type: "update", text });
+      webview.postMessage({ type: "update", text, imageBase });
     });
     webviewPanel.onDidDispose(() => changeSub.dispose());
 

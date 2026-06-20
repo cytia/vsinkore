@@ -20,9 +20,13 @@ export type ExtensionMessage =
       /** Push the document's full text for initial render. */
       type: "init";
       text: string;
+      /** webview base URI (asWebviewUri of the document's folder) that in-doc
+       *  relative image paths resolve against ([D4-1]). */
+      imageBase: string;
     }
   | {
       /** Push an external document change for in-place re-render. */
       type: "update";
       text: string;
+      imageBase: string;
     };

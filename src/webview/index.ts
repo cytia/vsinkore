@@ -47,7 +47,7 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
     }
     mount.textContent = "";
     try {
-      editor = mountEditor(mount, message.text, queueEdit);
+      editor = mountEditor(mount, message.text, message.imageBase, queueEdit);
     } catch (err) {
       // A render failure would otherwise leave a blank webview with no clue.
       mount.textContent = `Failed to render: ${String(err)}`;
@@ -56,7 +56,7 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
     return;
   }
   if (message?.type === "update" && editor) {
-    editor.applyExternal(message.text);
+    editor.applyExternal(message.text, message.imageBase);
   }
 });
 
