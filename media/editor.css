@@ -17,8 +17,11 @@ body {
 #root {
   height: 100vh;
   overflow-y: auto;
-  padding: 32px 40px;
+  /* Left padding reserves the gutter lane; gutter is absolutely positioned in
+     it so the centered .ProseMirror keeps its own max-width ([D0-7]). */
+  padding: 32px 40px 32px 64px;
   box-sizing: border-box;
+  position: relative;
 }
 
 .ProseMirror {
@@ -611,4 +614,27 @@ li[data-type="task-item"][data-checked="true"] .task-checkbox {
   border-radius: 4px;
   color: var(--vscode-descriptionForeground);
   font-size: 0.9em;
+}
+
+/* ─── Line-number gutter (source-line, per block, [D0-7] [D5-1]) ─── */
+.pm-line-gutter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Matches #root left padding minus the right gap before text. */
+  width: 52px;
+  pointer-events: none;
+}
+
+/* Each number is positioned by JS at its block's visual top, right-aligned in
+   the lane like VSCode's native line numbers (no separator rule). */
+.pm-line-gutter-num {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.85em;
+  line-height: 1.6;
 }

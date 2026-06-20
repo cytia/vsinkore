@@ -25,11 +25,13 @@ D:\My-Projects\
 
 阶段三（双向桥：编辑回写 + 外部同步）完成并 F5 验证：webview 改动 → `serializeMarkdown`（延迟进防抖）→ `edit` 消息 → extension `WorkspaceEdit` 整文替换；外部改动 → `update` 消息 → `applyExternal` 原地重渲染；防回环走 `lastWrittenText` 文本比对 + webview 侧 `applyingExternal` 标志双层守卫 `[D3-1]`。
 
-阶段四（图片只读显示 + 主题对齐）完成并 F5 验证：extension 算文档所在 vault 根的 `asWebviewUri` base 随消息下发，webview 侧 `new URL` 拼相对图片路径；图片根取 workspace folder（vault 根，非文档目录），`localResourceRoots` 同步授权；`saveImage` no-op 不插图；图片样式接 `--vscode-*` 明暗跟随 `[D4-1]`。下一步进阶段五（行号槽 + 交互打磨）。
+阶段四（图片只读显示 + 主题对齐）完成并 F5 验证：extension 算文档所在 vault 根的 `asWebviewUri` base 随消息下发，webview 侧 `new URL` 拼相对图片路径；图片根取 workspace folder（vault 根，非文档目录），`localResourceRoots` 同步授权；`saveImage` no-op 不插图；图片样式接 `--vscode-*` 明暗跟随 `[D4-1]`。
+
+阶段五（行号槽 + 交互打磨）推进中：**行号槽**完成并 F5 验证——内核导出配置好的 `mdIt`，host 侧平行解析取每块 `token.map` 源码起始行、与顶层节点 1:1 zip，绝对定位兄弟层按 `coordsAtPos` 对齐块顶渲染（无竖线、右对齐、逐块标首行、rAF 节流）；源码物理行号口径与 .md 真实行号一致 `[D5-1]`。余下子任务：空态/加载态、查找高亮、右键菜单、Bubble Toolbar（UI 对齐 VSCode 原生）。
 
 已知待办：标准 Markdown 脚注定义 `[^1]: 文本` 内核不解析（成因二，内核侧独立任务，见阶段工作表）。
 
-详见 [学习/阶段工作表.md](学习/阶段工作表.md)（进度 + 首版功能范围表）与 [学习/阶段决策备忘.md](学习/阶段决策备忘.md)（`[D0-1]`~`[D4-1]`）。
+详见 [学习/阶段工作表.md](学习/阶段工作表.md)（进度 + 首版功能范围表）与 [学习/阶段决策备忘.md](学习/阶段决策备忘.md)（`[D0-1]`~`[D5-1]`）。
 
 ## 文件规范
 

@@ -17,7 +17,7 @@ export { createEditorState } from './setup';
 export type { CreateEditorStateOptions } from './setup';
 
 // Markdown bridge
-export { parseMarkdown, serializeMarkdown, customSerializer } from './markdown';
+export { parseMarkdown, serializeMarkdown, customSerializer, mdIt } from './markdown';
 
 // Outline
 export { extractOutline } from './outline';

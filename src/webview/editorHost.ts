@@ -15,6 +15,7 @@ import {
   type ToRenderUrl,
 } from "../editor-core";
 import { codeHighlightPlugin } from "./codeHighlightPlugin";
+import { mountLineGutter, type LineGutter } from "./lineGutter";
 
 // Images are not persisted ([D0-6]): saveImage is a no-op so the core's
 // imageUploadPlugin has a valid callback but pasted/dropped images reach nothing.
@@ -77,6 +78,10 @@ export function mountEditor(
   // serialized and echoed back as a local edit (loop guard, [D3]).
   let applyingExternal = false;
 
+  // Declared before the view so dispatchTransaction can refresh it; assigned
+  // once the view exists (the gutter needs coordsAtPos).
+  let gutter: LineGutter | undefined;
+
   const view: EditorView = new EditorView(mount, {
     state,
     nodeViews: {
@@ -95,15 +100,24 @@ export function mountEditor(
     dispatchTransaction(tr) {
       const next = view.state.apply(tr);
       view.updateState(next);
-      // Only react when the doc actually changed; selection-only or
-      // decoration-only transactions (e.g. Shiki) must not trigger write-back.
-      // Serialization is deferred into the thunk so a debounced consumer pays
-      // for it once, not per keystroke.
-      if (tr.docChanged && !applyingExternal) {
-        onChange(() => serializeMarkdown(next.doc));
+      if (tr.docChanged) {
+        // Block tops move and blocks may be added/removed on any doc change;
+        // the gutter recomputes both, throttled to one rAF (it serializes at
+        // most once per frame, not per keystroke).
+        gutter?.refresh();
+        // Only write back local edits; an external apply must not echo ([D3]).
+        // Serialization is deferred into the thunk so a debounced consumer pays
+        // for it once, not per keystroke.
+        if (!applyingExternal) {
+          onChange(() => serializeMarkdown(next.doc));
+        }
       }
     },
   });
+
+  // The gutter serializes the live doc itself (throttled) to map blocks to
+  // source lines; pass a serializer rather than stale text.
+  gutter = mountLineGutter(view, mount, () => serializeMarkdown(view.state.doc));
 
   // Replace the whole doc with an external change. Guarded so the resulting
   // transaction is not echoed back to the extension as a local edit.

@@ -120,8 +120,11 @@ export const customSerializer = new MarkdownSerializer(
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
 
-// markdown-it with html + strikethrough + table so <u>, <span>, ~~, GFM tables are tokenized
-const mdIt = new MarkdownIt({ html: true }).enable('strikethrough').enable('table');
+// markdown-it with html + strikethrough + table so <u>, <span>, ~~, GFM tables are tokenized.
+// Exported so a host can reuse the exact configured instance for parallel parsing
+// (e.g. source-line mapping); a bare `new MarkdownIt()` would segment blocks
+// differently (missing task/footnote/table plugins) ([D5-1]).
+export const mdIt = new MarkdownIt({ html: true }).enable('strikethrough').enable('table');
 mdIt.use(katex, { throwOnError: false });
 mdIt.use(taskListPlugin);
 mdIt.use(htmlInlinePlugin);
