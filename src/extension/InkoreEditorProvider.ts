@@ -4,9 +4,10 @@ import type { WebviewMessage } from "../shared/messages";
 /**
  * Custom Text Editor for `.md` files (see [D0-1]).
  *
- * Stage two (read-only PoC): pushes the document text to the webview for
- * WYSIWYG rendering on demand. It does not yet observe document changes or
- * write back — the two-way bridge arrives in stage three.
+ * Two-way bridge ([D3]): pushes the document text on ready, writes webview edits
+ * back via WorkspaceEdit (VSCode owns dirty/save/undo, 工作规范 §五), and pushes
+ * external document changes back for re-render. Loop guard: a change whose text
+ * matches what the plugin last wrote is its own echo and is not pushed back.
  */
 export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   // Must stay identical to contributes.customEditors[].viewType in package.json,
@@ -36,15 +37,66 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
       ],
     };
 
-    // Push the document text once the webview reports ready, so the init message
-    // can't race the script load. Read-only: no change observer this stage.
+    // Text this provider last wrote to the document. An incoming change whose
+    // text matches it is our own echo and must not be pushed back to the webview
+    // (would jump the cursor / loop, [D3]). undefined = nothing written yet.
+    let lastWrittenText: string | undefined;
+
     webviewPanel.webview.onDidReceiveMessage((message: WebviewMessage) => {
+      // Push the document text once the webview reports ready, so the init
+      // message can't race the script load.
       if (message?.type === "ready") {
         webview.postMessage({ type: "init", text: document.getText() });
+        return;
+      }
+      if (message?.type === "edit") {
+        void this.writeBack(document, message.text, (written) => {
+          lastWrittenText = written;
+        });
       }
     });
 
+    // External changes (other editor / git checkout) re-render the webview;
+    // our own write-backs are filtered out by the lastWrittenText guard.
+    const changeSub = vscode.workspace.onDidChangeTextDocument((event) => {
+      if (event.document.uri.toString() !== document.uri.toString()) {
+        return;
+      }
+      const text = event.document.getText();
+      if (text === lastWrittenText) {
+        return; // our own echo
+      }
+      webview.postMessage({ type: "update", text });
+    });
+    webviewPanel.onDidDispose(() => changeSub.dispose());
+
     webview.html = this.buildHtml(webview);
+  }
+
+  /**
+   * Replace the whole document with `text` via a WorkspaceEdit. No-op when the
+   * text is already identical, so a webview round-trip that serializes to the
+   * same Markdown doesn't dirty the document. Records what was written so the
+   * change observer can recognize its own echo ([D3]).
+   */
+  private async writeBack(
+    document: vscode.TextDocument,
+    text: string,
+    onWritten: (written: string) => void,
+  ): Promise<void> {
+    const current = document.getText();
+    if (current === text) {
+      return;
+    }
+    const fullRange = new vscode.Range(
+      document.positionAt(0),
+      document.positionAt(current.length),
+    );
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(document.uri, fullRange, text);
+    // Record before applying: the change event can fire synchronously.
+    onWritten(text);
+    await vscode.workspace.applyEdit(edit);
   }
 
   /** Build the webview HTML with a strict CSP and a per-load script nonce. */

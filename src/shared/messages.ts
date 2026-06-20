@@ -3,14 +3,26 @@
 // no functions, DOM refs, or EditorView cross the boundary (§五).
 
 /** webview → extension */
-export type WebviewMessage = {
-  /** Webview script has loaded and is ready to receive the document. */
-  type: "ready";
-};
+export type WebviewMessage =
+  | {
+      /** Webview script has loaded and is ready to receive the document. */
+      type: "ready";
+    }
+  | {
+      /** Serialized Markdown after a doc-changing edit, for write-back. */
+      type: "edit";
+      text: string;
+    };
 
 /** extension → webview */
-export type ExtensionMessage = {
-  /** Push the document's full text for initial render. */
-  type: "init";
-  text: string;
-};
+export type ExtensionMessage =
+  | {
+      /** Push the document's full text for initial render. */
+      type: "init";
+      text: string;
+    }
+  | {
+      /** Push an external document change for in-place re-render. */
+      type: "update";
+      text: string;
+    };
