@@ -2,7 +2,7 @@
   "name": "vsinkore",
   "displayName": "vsinkore",
   "description": "WYSIWYG Markdown editing for VSCode, powered by the Inkore editor core.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "license": "UNLICENSED",
   "publisher": "inkore",
@@ -48,7 +48,8 @@
     "prosemirror-schema-list": "^1.5.1",
     "prosemirror-state": "^1.4.4",
     "prosemirror-tables": "^1.8.5",
-    "prosemirror-view": "^1.41.8"
+    "prosemirror-view": "^1.41.8",
+    "shiki": "^1.29.2"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",

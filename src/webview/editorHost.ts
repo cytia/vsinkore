@@ -12,6 +12,7 @@ import {
   type SaveImage,
   type ToRenderUrl,
 } from "../editor-core";
+import { codeHighlightPlugin } from "./codeHighlightPlugin";
 
 // Read-only PoC: images are not persisted ([D0-6]). saveImage is a no-op so the
 // core's imageUploadPlugin has a valid callback but nothing reaches disk.
@@ -32,10 +33,15 @@ const toRenderUrl: ToRenderUrl = (_vaultRoot, relPath) => relPath;
  * to the document arrives in stage three.
  */
 export function mountEditor(mount: HTMLElement, content: string): EditorView {
-  const state = createEditorState({
+  const baseState = createEditorState({
     content,
     saveImage,
     markdownInput: true,
+  });
+  // Append Shiki highlight decorations without touching the core's plugin set
+  // or its code_block NodeView header ([D0-8]).
+  const state = baseState.reconfigure({
+    plugins: [...baseState.plugins, codeHighlightPlugin()],
   });
 
   const view: EditorView = new EditorView(mount, {

@@ -131,7 +131,8 @@ body {
   border-radius: 4px;
   border: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editor-background);
-  overflow: hidden;
+  /* No overflow:hidden here — it would clip the language dropdown, which
+     overflows the block on open. Corners are rounded on header / pre instead. */
 }
 
 .pm-code-block-header {
@@ -142,6 +143,7 @@ body {
   height: 30px;
   border-bottom: 1px solid var(--vscode-panel-border);
   background: var(--vscode-editorWidget-background);
+  border-radius: 4px 4px 0 0;
 }
 
 .pm-code-lang-trigger,
@@ -179,6 +181,8 @@ body {
   overflow-x: auto;
   white-space: pre;
   background: transparent;
+  /* Round the bottom corners since the container no longer clips them. */
+  border-radius: 0 0 4px 4px;
 }
 
 .pm-code-block code {
@@ -189,6 +193,21 @@ body {
   background: none;
   padding: 0;
   white-space: pre;
+}
+
+/* ─── Code block: Shiki token font styles ([D0-8]) ──── */
+/* Color classes (.shk-<hex>) are injected into #shiki-styles at runtime; these
+   font-style classes are static. */
+.pm-code-block code .shk-i {
+  font-style: italic;
+}
+
+.pm-code-block code .shk-b {
+  font-weight: 600;
+}
+
+.pm-code-block code .shk-u {
+  text-decoration: underline;
 }
 
 /* ─── Code block: language picker dropdown ──────────── */

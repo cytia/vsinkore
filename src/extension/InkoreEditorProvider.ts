@@ -62,9 +62,13 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
     const csp = [
       `default-src 'none'`,
       `img-src ${webview.cspSource} https: data:`,
-      `style-src ${webview.cspSource}`,
+      // nonce lets the webview fill #shiki-styles with Shiki token colors without
+      // opening unsafe-inline (see [D0-8]); bundled CSS still loads via cspSource.
+      `style-src ${webview.cspSource} 'nonce-${nonce}'`,
       `font-src ${webview.cspSource}`,
-      `script-src 'nonce-${nonce}'`,
+      // The nonce authorizes the entry module; cspSource lets its dynamically
+      // imported chunks (Shiki languages, [D0-8]) load from the same origin.
+      `script-src 'nonce-${nonce}' ${webview.cspSource}`,
     ].join("; ");
 
     return `<!DOCTYPE html>
@@ -75,11 +79,13 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="${bundledCssUri}" rel="stylesheet" />
   <link href="${editorCssUri}" rel="stylesheet" />
+  <!-- Pre-authorized (nonce) sink the webview fills with Shiki token color rules. -->
+  <style nonce="${nonce}" id="shiki-styles"></style>
   <title>Inkore Editor</title>
 </head>
 <body>
   <div id="root"></div>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
+  <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
   }
