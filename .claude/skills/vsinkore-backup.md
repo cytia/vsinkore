@@ -49,7 +49,7 @@ cd "d:\My-Projects\vsinkore" && git status --short
 cd "d:\My-Projects\vsinkore" && git add <文件1> <文件2> ...
 ```
 
-**禁忌**：不要 `git add dist/` / `git add node_modules/`（构建产物与依赖，由 `.gitignore` 排除）。`@inkore/editor-core` 是 `file:../Inkore-core` 本地依赖、独立私有仓，其改动只在它自己的仓库 commit/push，永远不进本仓。
+**禁忌**：不要 `git add dist/` / `git add node_modules/`（构建产物与依赖，由 `.gitignore` 排除）。注：编辑器内核源码已内联在 `src/editor-core/`，是本仓自己的源码，**正常纳入提交**（不再是外部 `file:` 依赖）。
 
 ### 步骤 6：如版本号有变动，同步更新
 

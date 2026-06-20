@@ -25,6 +25,15 @@ const webviewConfig = {
   platform: "browser",
   format: "iife",
   target: "es2022",
+  // Imported CSS (katex/prosemirror/tables) is emitted as dist/webview.css.
+  // katex's CSS references font files; copy them into dist as assets so they
+  // load via asWebviewUri under the webview CSP (font-src cspSource).
+  loader: {
+    ".woff": "file",
+    ".woff2": "file",
+    ".ttf": "file",
+  },
+  assetNames: "[name]-[hash]",
   sourcemap: watch ? "inline" : false,
   logLevel: "info",
 };

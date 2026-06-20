@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
+import type { WebviewMessage } from "../shared/messages";
 
 /**
- * Minimal Custom Text Editor for `.md` files (see [D0-1]).
+ * Custom Text Editor for `.md` files (see [D0-1]).
  *
- * Skeleton stage: it only renders an empty webview to prove the CSP + nonce +
- * asWebviewUri wiring works. Reading the document, the editor core, and the
- * two-way bridge all arrive in later stages.
+ * Stage two (read-only PoC): pushes the document text to the webview for
+ * WYSIWYG rendering on demand. It does not yet observe document changes or
+ * write back — the two-way bridge arrives in stage three.
  */
 export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   // Must stay identical to contributes.customEditors[].viewType in package.json,
@@ -23,7 +24,7 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   resolveCustomTextEditor(
-    _document: vscode.TextDocument,
+    document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
   ): void {
     const { webview } = webviewPanel;
@@ -34,19 +35,34 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
         vscode.Uri.joinPath(this.context.extensionUri, "media"),
       ],
     };
+
+    // Push the document text once the webview reports ready, so the init message
+    // can't race the script load. Read-only: no change observer this stage.
+    webviewPanel.webview.onDidReceiveMessage((message: WebviewMessage) => {
+      if (message?.type === "ready") {
+        webview.postMessage({ type: "init", text: document.getText() });
+      }
+    });
+
     webview.html = this.buildHtml(webview);
   }
 
   /** Build the webview HTML with a strict CSP and a per-load script nonce. */
   private buildHtml(webview: vscode.Webview): string {
     const nonce = makeNonce();
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview.js"),
-    );
+    const asset = (...parts: string[]): vscode.Uri =>
+      webview.asWebviewUri(
+        vscode.Uri.joinPath(this.context.extensionUri, ...parts),
+      );
+    const scriptUri = asset("dist", "webview.js");
+    // Third-party editor CSS (katex/prosemirror/tables) bundled by esbuild, plus
+    // our own VSCode-themed typography. Both served locally, never via CDN ([D0-2]).
+    const bundledCssUri = asset("dist", "webview.css");
+    const editorCssUri = asset("media", "editor.css");
     const csp = [
       `default-src 'none'`,
       `img-src ${webview.cspSource} https: data:`,
-      `style-src ${webview.cspSource} 'nonce-${nonce}'`,
+      `style-src ${webview.cspSource}`,
       `font-src ${webview.cspSource}`,
       `script-src 'nonce-${nonce}'`,
     ].join("; ");
@@ -57,6 +73,8 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="${csp}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="${bundledCssUri}" rel="stylesheet" />
+  <link href="${editorCssUri}" rel="stylesheet" />
   <title>Inkore Editor</title>
 </head>
 <body>

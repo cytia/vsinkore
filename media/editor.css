@@ -1,0 +1,573 @@
+/*
+ * Editor typography for the webview.
+ *
+ * Layout structure (spacing, line-height, block rhythm) is adapted from the
+ * desktop editor; all colors and fonts are remapped to native VSCode CSS
+ * variables so the editor follows the active theme and light/dark automatically
+ * ([D0-5]). The desktop 砚客 themes (--text-1 / --accent / data-theme) are NOT
+ * ported.
+ */
+
+body {
+  margin: 0;
+  background: var(--vscode-panel-background);
+  color: var(--vscode-editor-foreground);
+}
+
+#root {
+  height: 100vh;
+  overflow-y: auto;
+  padding: 32px 40px;
+  box-sizing: border-box;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-editor-font-size, 14px);
+  line-height: 1.6;
+  color: var(--vscode-editor-foreground);
+  white-space: pre-wrap;
+}
+
+.ProseMirror p {
+  margin: 0.6em 0;
+}
+
+/* Headings: rhythm and separators mirror the prototype (原型 182-194). */
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  color: var(--vscode-editor-foreground);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.4em 0 0.5em;
+}
+
+.ProseMirror h1 {
+  font-size: 1.85em;
+  margin-top: 0;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--vscode-textSeparator-foreground);
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--vscode-textSeparator-foreground);
+}
+
+.ProseMirror h3 {
+  font-size: 1.25em;
+}
+
+.ProseMirror h4 {
+  font-size: 1.05em;
+}
+
+.ProseMirror h5 {
+  font-size: 0.95em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ProseMirror h6 {
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ProseMirror blockquote {
+  color: var(--vscode-foreground);
+  border-left: 4px solid var(--vscode-textBlockQuote-border);
+  background: var(--vscode-textBlockQuote-background);
+  margin: 0.8em 0;
+  padding: 0.4em 1em;
+}
+
+.ProseMirror blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--vscode-textSeparator-foreground);
+  margin: 1.6em 0;
+}
+
+/* ─── Links ─────────────────────────────────────────── */
+.ProseMirror a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: text;
+}
+
+.ProseMirror a:hover {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.ProseMirror[data-ctrl] a {
+  cursor: pointer;
+}
+
+/* ─── Inline code ───────────────────────────────────── */
+.ProseMirror :not(pre) > code {
+  font-family: var(--vscode-editor-font-family), monospace;
+  font-size: 0.9em;
+  color: var(--vscode-textPreformat-foreground);
+  background: var(--vscode-textPreformat-background);
+  border-radius: 3px;
+  padding: 0.12em 0.4em;
+}
+
+/* ─── Code block (core NodeView: .pm-code-block) ────── */
+.pm-code-block {
+  margin: 1em 0;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+  overflow: hidden;
+}
+
+.pm-code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 4px;
+  height: 30px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+}
+
+.pm-code-lang-trigger,
+.pm-code-copy,
+.pm-code-delete {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pm-code-lang-trigger:hover,
+.pm-code-copy:hover,
+.pm-code-delete:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.pm-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pm-code-block pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre;
+  background: transparent;
+}
+
+.pm-code-block code {
+  font-family: var(--vscode-editor-font-family), monospace;
+  font-size: var(--vscode-editor-font-size, 13px);
+  line-height: 1.6;
+  color: var(--vscode-editor-foreground);
+  background: none;
+  padding: 0;
+  white-space: pre;
+}
+
+/* ─── Code block: language picker dropdown ──────────── */
+/* Header is the anchor; dropdown floats below the language trigger. */
+.pm-code-block-header {
+  position: relative;
+}
+
+.pm-code-lang-label.pm-code-lang-placeholder {
+  color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+}
+
+.pm-code-lang-chevron {
+  display: inline-flex;
+  margin-left: 2px;
+}
+
+.pm-code-lang-dropdown {
+  display: none;
+  position: absolute;
+  top: 28px;
+  left: 4px;
+  z-index: 5;
+  width: 200px;
+  max-height: 280px;
+  flex-direction: column;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 4px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  overflow: hidden;
+}
+
+.pm-code-lang-dropdown--open {
+  display: flex;
+}
+
+.pm-code-lang-search {
+  margin: 6px;
+  padding: 4px 6px;
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+  border-radius: 3px;
+  outline: none;
+}
+
+.pm-code-lang-search:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.pm-code-lang-list {
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+
+.pm-code-lang-item {
+  padding: 4px 10px;
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+}
+
+.pm-code-lang-item:hover,
+.pm-code-lang-item--focused {
+  color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
+  background: var(--vscode-list-hoverBackground);
+}
+
+.pm-code-lang-item--selected {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.pm-code-lang-item--custom strong {
+  color: var(--vscode-textLink-foreground);
+  font-weight: 600;
+}
+
+/* ─── Math block (core NodeView: .pm-math-block) ─────── */
+/* Mirrors the code-block card frame: bordered, bar header, editor-bg body. */
+.pm-math-block {
+  margin: 1em 0;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editor-background);
+  overflow: hidden;
+}
+
+.pm-math-block-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 10px;
+  height: 30px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-editorWidget-background);
+}
+
+.pm-math-block-label {
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.pm-math-block-delete {
+  display: flex;
+  align-items: center;
+  color: var(--vscode-descriptionForeground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pm-math-block-delete:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.pm-math-block-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 10px 14px;
+  resize: vertical;
+  font-family: var(--vscode-editor-font-family), monospace;
+  font-size: var(--vscode-editor-font-size, 13px);
+  line-height: 1.6;
+  color: var(--vscode-editor-foreground);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  outline: none;
+}
+
+.pm-math-block-preview {
+  padding: 12px 14px;
+  overflow-x: auto;
+  text-align: center;
+  color: var(--vscode-editor-foreground);
+}
+
+/* ─── Math inline (core NodeView: .pm-math-inline) ───── */
+.pm-math-inline {
+  display: inline;
+  cursor: pointer;
+}
+
+.pm-math-inline-render {
+  color: var(--vscode-editor-foreground);
+}
+
+.pm-math-inline-placeholder {
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px dashed var(--vscode-descriptionForeground);
+  padding: 0 0.2em;
+}
+
+.pm-math-inline-input {
+  font-family: var(--vscode-editor-font-family), monospace;
+  font-size: 0.9em;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+  border-radius: 3px;
+  padding: 0 0.3em;
+  outline: none;
+}
+
+.pm-math-inline-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* ─── Footnote reference (core NodeView: .pm-fn-ref) ──── */
+.pm-fn-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  padding: 0 0.15em;
+  user-select: none;
+}
+
+.pm-fn-ref::before {
+  content: "[";
+}
+
+.pm-fn-ref::after {
+  content: "]";
+}
+
+.pm-fn-ref:hover {
+  color: var(--vscode-textLink-activeForeground);
+}
+
+.pm-fn-ref--active {
+  background: var(--vscode-editor-findMatchHighlightBackground);
+  border-radius: 2px;
+}
+
+/* ─── Footnote definition (core NodeView: .pm-fn-def) ─── */
+.pm-fn-def {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  margin: 0.3em 0;
+  padding-top: 0.3em;
+  font-size: 0.9em;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* The first definition gets a separator above the footnote block. */
+.pm-fn-def:first-of-type {
+  margin-top: 1.4em;
+  border-top: 1px solid var(--vscode-widget-border);
+  padding-top: 1em;
+}
+
+.pm-fn-def__num {
+  flex-shrink: 0;
+  font-size: 0.85em;
+  vertical-align: super;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+}
+
+.pm-fn-def__num::before {
+  content: "[";
+}
+
+.pm-fn-def__num::after {
+  content: "]";
+}
+
+.pm-fn-def__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── Footnote popover (core: .pm-fn-popover) ────────── */
+/* Singleton appended to <body>, positioned by the core NodeView in px. */
+.pm-fn-popover {
+  position: fixed;
+  z-index: 20;
+  display: none;
+  width: 260px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 4px;
+  background: var(--vscode-editorWidget-background);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+.pm-fn-popover--visible {
+  display: block;
+}
+
+.pm-fn-popover__preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pm-fn-popover__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+  border-radius: 3px;
+  padding: 4px 6px;
+  outline: none;
+}
+
+.pm-fn-popover__textarea:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* ─── Task list ─────────────────────────────────────── */
+ul[data-type="task-list"] {
+  list-style: none;
+  padding-left: 0.25em;
+  margin: 0 0 0.75em 0;
+}
+
+li[data-type="task-item"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin-bottom: 0.25em;
+}
+
+.task-checkbox {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  user-select: none;
+}
+
+li[data-type="task-item"][data-checked="true"] .task-checkbox {
+  color: var(--vscode-textLink-foreground);
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* ─── Table ─────────────────────────────────────────── */
+.ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+  margin: 0.9em 0;
+}
+
+.ProseMirror table th,
+.ProseMirror table td {
+  border: 1px solid var(--vscode-widget-border);
+  padding: 0.4em 0.8em;
+  text-align: left;
+  vertical-align: top;
+  max-width: 320px;
+  word-break: break-word;
+}
+
+.ProseMirror table th {
+  font-weight: 600;
+  background: var(--vscode-editorWidget-background);
+}
+
+.ProseMirror table td p,
+.ProseMirror table th p {
+  margin-bottom: 0;
+}
+
+.ProseMirror .selectedCell {
+  background: var(--vscode-editor-selectionBackground);
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
+.column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--vscode-focusBorder);
+  pointer-events: none;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
+/* ─── Placeholder ───────────────────────────────────── */
+.pm-placeholder {
+  color: var(--vscode-editorGhostText-foreground, var(--vscode-descriptionForeground));
+  pointer-events: none;
+  position: absolute;
+}

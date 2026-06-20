@@ -1,8 +1,8 @@
 # vsinkore — Claude 工作指引
 
-vsinkore 是 Inkore 的 VSCode 插件：把 `@inkore/editor-core` 作为 host，注册为 `.md` 的 Custom Text Editor，在 webview 里提供所见即所得的 Markdown 编辑体验。
+vsinkore 是 Inkore 的 VSCode 插件：把编辑器内核（源码内联在 `src/editor-core/`）作为 host，注册为 `.md` 的 Custom Text Editor，在 webview 里提供所见即所得的 Markdown 编辑体验。
 
-技术栈：TypeScript + VSCode Extension API + `@inkore/editor-core`（原生 ProseMirror）+ esbuild。
+技术栈：TypeScript + VSCode Extension API + 内联编辑器内核（原生 ProseMirror）+ esbuild。
 
 **纯免费、只做编辑**——不碰激活 / PRO / 导出。这些属于桌面版，不进插件。
 
@@ -10,13 +10,13 @@ vsinkore 是 Inkore 的 VSCode 插件：把 `@inkore/editor-core` 作为 host，
 
 ```
 D:\My-Projects\
-├── Inkore-core\   ← 编辑器内核（独立私有仓，零 React / 零 Tauri）
+├── Inkore-core\   ← 编辑器内核源头（独立私有仓，零 React / 零 Tauri）；本仓不引用它
 ├── My-MarkaV2\    ← 桌面版 v2（Tauri 客户端）
-└── vsinkore\      ← 本仓：VSCode 插件
+└── vsinkore\      ← 本仓：VSCode 插件（内核源码已内联在 src/editor-core/）
 ```
 
-- 内核通过 `file:../Inkore-core` 本地依赖引入，先不发 npm。
-- 内核**只提供能力，不带 host 封装、不带 CSS**。host wiring（构建 EditorView、接 NodeViews）、样式、平台桥接（图片持久化、URL 解析）都由本仓实现。
+- 内核源码**拷贝内联**在本仓 `src/editor-core/`，本仓独立持有、独立构建，不再 `file:` 引用外部 `Inkore-core` 仓。改内核即改本仓自己的文件；外部 `Inkore-core` 仅作源头记录，存量不动。
+- 内核**只提供能力，不带 host 封装、不带 CSS**。host wiring（构建 EditorView、接 NodeViews）、样式、平台桥接（图片持久化、URL 解析）都由本仓 `src/extension` / `src/webview` 实现。
 - 内核 `scope`：只含免费编辑能力。任何付费 / 导出逻辑都不属于内核，也不属于本插件。
 
 ## 当前进度
