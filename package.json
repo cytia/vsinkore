@@ -2,17 +2,22 @@
   "name": "vsinkore",
   "displayName": "vsinkore",
   "description": "WYSIWYG Markdown editing for VSCode, powered by the Inkore editor core.",
-  "version": "0.0.6",
-  "private": true,
+  "version": "0.1.0",
   "license": "UNLICENSED",
   "publisher": "inkore",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cytia/vsinkore.git"
+  },
   "engines": {
     "vscode": "^1.125.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Formatters"
   ],
   "main": "./dist/extension.js",
+  "icon": "media/icon.png",
   "contributes": {
     "customEditors": [
       {
@@ -55,6 +60,7 @@
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.0.0",
     "@types/vscode": "^1.125.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.24.0",
     "typescript": "^5.6.0"
   }

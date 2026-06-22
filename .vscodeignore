@@ -1,0 +1,19 @@
+# Only dist/ (bundled extension + webview) and media/ (CSS, icons) are needed at
+# runtime. Everything else — source, build config, docs, prototypes — is excluded
+# from the .vsix.
+src/**
+.vscode/**
+.claude/**
+学习/**
+原型/**
+scripts/**
+node_modules/**
+
+CLAUDE.md
+esbuild.mjs
+tsconfig.json
+.gitignore
+.gitattributes
+**/*.map
+**/tsconfig*.json
+**/.eslintrc*
