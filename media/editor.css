@@ -520,10 +520,18 @@ li[data-type="task-item"] {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  margin-top: 1px;
+  /* Match one text line's box (font-size × 1.6 line-height) so centering the
+     16px SVG here lines it up with the first text line's optical center,
+     instead of the fragile fixed nudge that left it reading high. */
+  height: calc(var(--vscode-editor-font-size, 14px) * 1.6);
   cursor: pointer;
   color: var(--vscode-descriptionForeground);
   user-select: none;
+  /* The core's checked SVG references --accent (filled box) and --card (the
+     check stroke, meant to contrast against the fill). Those are desktop tokens
+     absent in this webview, so map them to VSCode tokens here. */
+  --accent: var(--vscode-textLink-foreground);
+  --card: var(--vscode-editor-background);
 }
 
 li[data-type="task-item"][data-checked="true"] .task-checkbox {
@@ -533,6 +541,13 @@ li[data-type="task-item"][data-checked="true"] .task-checkbox {
 .task-content {
   flex: 1;
   min-width: 0;
+}
+
+/* Zero the first paragraph's top margin so the text starts at the same top the
+   checkbox is centered against; otherwise .ProseMirror p's 0.6em top margin
+   pushes the text down and the checkbox reads as misaligned (high). */
+.task-content p:first-child {
+  margin-top: 0;
 }
 
 .task-content p:last-child {
@@ -587,6 +602,17 @@ li[data-type="task-item"][data-checked="true"] .task-checkbox {
   cursor: col-resize;
 }
 
+/* ─── Loading state (shown until init mounts the editor, [D5]) ─── */
+.pm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 0.9em;
+}
+
 /* ─── Placeholder ───────────────────────────────────── */
 .pm-placeholder {
   color: var(--vscode-editorGhostText-foreground, var(--vscode-descriptionForeground));
@@ -637,4 +663,375 @@ li[data-type="task-item"][data-checked="true"] .task-checkbox {
   font-family: var(--vscode-editor-font-family);
   font-size: 0.85em;
   line-height: 1.6;
+}
+
+/* ─── Find: match highlight + widget (查找高亮, [D5]) ─── */
+
+/* Decorations from the core's searchHighlightPlugin. Reuse VSCode's own find
+   colors so highlights match the native editor's. */
+.search-match {
+  background: var(--vscode-editor-findMatchHighlightBackground);
+  border-radius: 2px;
+}
+
+.search-match-active {
+  background: var(--vscode-editor-findMatchBackground);
+  border-radius: 2px;
+}
+
+/* Find widget, pinned top-right like VSCode's native find. Fixed (not absolute)
+   so it stays put while the #root scroll container scrolls under it. */
+.pm-search-box {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-editorWidget-foreground);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+}
+
+.pm-search-box[hidden] {
+  display: none;
+}
+
+.pm-search-input {
+  width: 200px;
+  padding: 2px 6px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  font-family: var(--vscode-font-family);
+  font-size: 0.9em;
+  outline: none;
+}
+
+.pm-search-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.pm-search-count {
+  min-width: 48px;
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.85em;
+}
+
+.pm-search-toggle,
+.pm-search-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  color: var(--vscode-icon-foreground);
+  border: none;
+  border-radius: 3px;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+
+.pm-search-toggle:hover,
+.pm-search-icon:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Option toggles (Aa / .*) show an active state when enabled. */
+.pm-search-toggle.active {
+  background: var(--vscode-inputOption-activeBackground);
+  color: var(--vscode-inputOption-activeForeground);
+  outline: 1px solid var(--vscode-inputOption-activeBorder);
+}
+
+/* ─── Bubble toolbar (self-written UI, mirrors 原型/editor-mockup.html, [D5]) ─── */
+.bubble {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 3px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  z-index: 5;
+  /* Match VSCode's global fadeIn (pure opacity, no offset). Replays whenever the
+     element goes display:none → shown, i.e. each time a selection reveals it. */
+  animation: bubbleFadeIn 0.15s ease;
+}
+
+@keyframes bubbleFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.bubble[hidden] {
+  display: none;
+}
+
+.bubble button {
+  font: inherit;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.bubble button:hover { background: var(--vscode-toolbar-hoverBackground); }
+.bubble button.on { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-editor-foreground); }
+.bubble .b-bold { font-weight: 700; }
+.bubble .b-italic { font-style: italic; }
+.bubble .b-under { text-decoration: underline; }
+.bubble .b-strike { text-decoration: line-through; }
+.bubble .b-code { font-family: var(--vscode-editor-font-family); }
+
+.bubble .sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--vscode-menu-separatorBackground);
+}
+
+/* Single text-color swatch. Displays the themed green; the applied mark is a
+   fixed hex (see bubbleToolbar.ts), so the swatch is purely indicative. */
+.bubble .swatch {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--vscode-widget-border);
+  background: var(--vscode-charts-green);
+}
+
+.bubble .b-ol { font-size: 11px; }
+
+/* Heading dropdown: a small popup anchored below its trigger, listing Paragraph
+   and H1–H6 (keeps the bar one row). Styled like VSCode menus. */
+.bubble-menu {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  padding: 4px 0;
+  background: var(--vscode-menu-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px var(--vscode-widget-shadow);
+  z-index: 6;
+}
+
+.bubble-menu[hidden] { display: none; }
+
+.bubble-menu-item {
+  font: inherit;
+  text-align: left;
+  padding: 3px 12px;
+  color: var(--vscode-menu-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.bubble-menu-item:hover {
+  background: var(--vscode-menu-selectionBackground);
+  color: var(--vscode-menu-selectionForeground);
+}
+
+/* Currently-applied level gets a subtle marker via accent text color. */
+.bubble-menu-item.active { color: var(--vscode-charts-green); }
+
+/* Link input popup: replaces window.prompt (disabled in webviews). Anchored
+   below the 🔗 button, same widget shell as the bubble. */
+.bubble-link-input {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px var(--vscode-widget-shadow);
+  z-index: 6;
+}
+
+.bubble-link-input[hidden] { display: none; }
+
+.bubble-link-input input {
+  width: 220px;
+  height: 24px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 3px;
+  outline: none;
+}
+
+.bubble-link-input input:focus { border-color: var(--vscode-focusBorder); }
+
+.bubble-link-input button {
+  font: inherit;
+  min-width: 24px;
+  height: 24px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.bubble-link-input button:hover { background: var(--vscode-toolbar-hoverBackground); }
+
+/* ─── Right-click menu (host-owned, VSCode menu tokens, [D5]) ─────────────── */
+.ctxmenu {
+  position: absolute;
+  min-width: 200px;
+  padding: 4px 0;
+  background: var(--vscode-menu-background);
+  color: var(--vscode-menu-foreground);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px var(--vscode-widget-shadow);
+  font-size: 13px;
+  z-index: 7;
+}
+
+.ctxmenu[hidden] { display: none; }
+
+.ctx-caption {
+  padding: 4px 14px 2px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px;
+  cursor: pointer;
+}
+
+.ctx-item:hover {
+  background: var(--vscode-menu-selectionBackground);
+  color: var(--vscode-menu-selectionForeground);
+}
+
+.ctx-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.ctx-item:hover .ctx-icon { color: inherit; }
+
+.ctx-item.has-sub { justify-content: space-between; }
+.ctx-item.has-sub::after { content: "›"; opacity: 0.7; margin-left: auto; }
+
+/* Table-edit menu has no icon column (matches Inkore); items are plain text. */
+.ctxmenu--plain .ctx-item { gap: 0; }
+
+.ctx-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--vscode-menu-separatorBackground);
+}
+
+/* Table size sub-popup (rows/cols + insert), opens beside the 表格 item. */
+.ctx-table {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  min-width: 200px;
+  background: var(--vscode-menu-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 12px var(--vscode-widget-shadow);
+  z-index: 8;
+}
+
+.ctx-table[hidden] { display: none; }
+
+.ctx-table-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ctx-table-row span { color: var(--vscode-descriptionForeground); }
+
+.ctx-table-row input {
+  width: 64px;
+  height: 24px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 3px;
+  outline: none;
+}
+
+.ctx-table-row input:focus { border-color: var(--vscode-focusBorder); }
+
+.ctx-table-insert {
+  height: 28px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ctx-table-insert:hover { background: var(--vscode-button-hoverBackground); }
+
+/* ─── Custom tooltip (VSCode hover-widget look, shared by toolbars, [D5]) ─── */
+.pm-tooltip {
+  position: fixed;
+  z-index: 20;
+  max-width: 280px;
+  padding: 2px 8px;
+  background: var(--vscode-editorHoverWidget-background);
+  color: var(--vscode-editorHoverWidget-foreground);
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  font-family: var(--vscode-font-family);
+  font-size: 0.85em;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: bubbleFadeIn 0.1s ease;
+}
+
+.pm-tooltip[hidden] {
+  display: none;
 }

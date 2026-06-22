@@ -67,6 +67,14 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
         void this.writeBack(document, message.text, (written) => {
           lastWrittenText = written;
         });
+        return;
+      }
+      if (message?.type === "openLink") {
+        // Only http(s) reaches openExternal; in-doc (#) / relative (/) hrefs and
+        // any other scheme (javascript:, file:) are dropped.
+        if (/^https?:\/\//i.test(message.href)) {
+          void vscode.env.openExternal(vscode.Uri.parse(message.href));
+        }
       }
     });
 
@@ -150,7 +158,10 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   <title>Inkore Editor</title>
 </head>
 <body>
-  <div id="root"></div>
+  <!-- Static loading placeholder shown until the webview script receives the
+       init message and mounts the editor (which clears #root). Inline so it
+       covers even the window before the script runs ([D5] 加载态). -->
+  <div id="root"><div class="pm-loading">Loading…</div></div>
   <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

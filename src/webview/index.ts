@@ -60,6 +60,42 @@ window.addEventListener("message", (event: MessageEvent<ExtensionMessage>) => {
   }
 });
 
+// Open the in-webview find widget on Ctrl/Cmd+F. Capture phase so it preempts
+// VSCode's native find (which can't reach inside the iframe anyway, [D5]).
+window.addEventListener(
+  "keydown",
+  (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key === "f") {
+      if (editor) {
+        e.preventDefault();
+        editor.toggleSearch();
+      }
+    }
+  },
+  true,
+);
+
+// Ctrl/Cmd+click a link to open it (plain click stays in-editor for cursor
+// placement / text editing, matching VSCode). The webview is sandboxed, so the
+// extension opens the URL via vscode.env.openExternal; it re-validates the href.
+// Must intercept on mousedown, not click: ProseMirror sets the selection on
+// mousedown, where ctrlKey otherwise reads as add-cursor/extend-selection — a
+// click-phase handler runs too late to stop it. stopPropagation keeps the event
+// from reaching the editor's mousedown selection logic.
+window.addEventListener(
+  "mousedown",
+  (e: MouseEvent) => {
+    if (e.button !== 0 || !(e.ctrlKey || e.metaKey)) return;
+    const anchor = (e.target as HTMLElement | null)?.closest("a");
+    const href = anchor?.getAttribute("href");
+    if (!href) return;
+    e.preventDefault();
+    e.stopPropagation();
+    post({ type: "openLink", href });
+  },
+  true,
+);
+
 post({ type: "ready" });
 
 // Minimal VSCode webview API typing — only what this entry uses.

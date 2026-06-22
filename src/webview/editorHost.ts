@@ -11,11 +11,18 @@ import {
   TocNodeView,
   FootnoteRefNodeView,
   FootnoteDefNodeView,
+  isInTable,
   type SaveImage,
   type ToRenderUrl,
+  type SearchMatch,
+  type BubbleSelectionInfo,
 } from "../editor-core";
 import { codeHighlightPlugin } from "./codeHighlightPlugin";
 import { mountLineGutter, type LineGutter } from "./lineGutter";
+import { mountSearchBox, type SearchBox } from "./searchBox";
+import { mountBubbleToolbar, type BubbleToolbar } from "./bubbleToolbar";
+import { mountLinkInput, type LinkInput } from "./bubbleLinkInput";
+import { mountContextMenu } from "./contextMenu";
 
 // Images are not persisted ([D0-6]): saveImage is a no-op so the core's
 // imageUploadPlugin has a valid callback but pasted/dropped images reach nothing.
@@ -58,15 +65,39 @@ export function mountEditor(
   content: string,
   imageBase: string,
   onChange: ChangeHandler,
-): { view: EditorView; applyExternal: (text: string, imageBase: string) => void } {
+): {
+  view: EditorView;
+  applyExternal: (text: string, imageBase: string) => void;
+  toggleSearch: () => void;
+} {
   // Mutable so an external update can refresh it; toRenderUrl reads it live.
   let currentImageBase = imageBase;
   const toRenderUrl: ToRenderUrl = (_vaultRoot, relPath) =>
     joinImageUrl(currentImageBase, relPath);
+  // Assigned after the view exists; the core reports search matches before then
+  // only if a query is set, which it isn't at init, so the guard is enough.
+  let searchBox: SearchBox | undefined;
+  // Same deferred-assignment pattern: the core only reports selection changes on
+  // user interaction, which can't happen before the view is mounted.
+  let bubble: BubbleToolbar | undefined;
+  // A compact bubble (marks + color + link) shown inside tables instead of the
+  // full one; the dispatcher routes by isInTable so only one shows ([D5-6]).
+  let tableBubble: BubbleToolbar | undefined;
+  const dispatchBubble = (info: BubbleSelectionInfo | null) => {
+    if (info && isInTable(view.state)) {
+      bubble?.update(null);
+      tableBubble?.update(info);
+    } else {
+      tableBubble?.update(null);
+      bubble?.update(info);
+    }
+  };
   const baseState = createEditorState({
     content,
     saveImage,
     markdownInput: true,
+    onMatchesChange: (matches: SearchMatch[]) => searchBox?.setMatches(matches),
+    onSelectionChange: dispatchBubble,
   });
   // Append Shiki highlight decorations without touching the core's plugin set
   // or its code_block NodeView header ([D0-8]).
@@ -119,6 +150,23 @@ export function mountEditor(
   // source lines; pass a serializer rather than stale text.
   gutter = mountLineGutter(view, mount, () => serializeMarkdown(view.state.doc));
 
+  // Find widget lives in the webview (VSCode's native find can't reach inside
+  // the iframe); it drives the core's searchHighlightPlugin ([D5] 查找高亮).
+  searchBox = mountSearchBox(view, mount);
+
+  // Link input popup, shared by the bubble toolbar and the right-click menu so
+  // both open the same UI (window.prompt is disabled in webviews, [D5]).
+  const linkInput: LinkInput = mountLinkInput(view, mount);
+
+  // Floating format toolbar over a selection; the core reports selection
+  // geometry, the host owns the UI ([D5] Bubble Toolbar).
+  bubble = mountBubbleToolbar(view, mount, linkInput);
+  tableBubble = mountBubbleToolbar(view, mount, linkInput, { compact: true });
+
+  // Right-click menu (format / insert / paste-as-plain), host-owned UI ([D5]).
+  // Lives for the webview's lifetime (like the bubble/gutter); no teardown here.
+  mountContextMenu(view, mount, linkInput);
+
   // Replace the whole doc with an external change. Guarded so the resulting
   // transaction is not echoed back to the extension as a local edit.
   function applyExternal(text: string, imageBase: string): void {
@@ -134,5 +182,5 @@ export function mountEditor(
     }
   }
 
-  return { view, applyExternal };
+  return { view, applyExternal, toggleSearch: () => searchBox?.toggle() };
 }

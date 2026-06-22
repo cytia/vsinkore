@@ -117,13 +117,27 @@ export function codeHighlightPlugin(): Plugin<DecorationSet> {
 /** Returns a debounced-ish requester that re-decorates once a grammar loads. */
 function makeLangRequester(view: EditorView): (lang: string) => void {
   const requested = new Set<string>();
+  // On first open, languages load one by one and each finished load used to
+  // dispatch its own RECHECK — N full-doc rebuilds back to back. Independent
+  // dynamic imports settle on staggered ticks, so coalesce them across a frame:
+  // loads finishing within the same rAF collapse into one RECHECK, cutting the
+  // rebuild峰值 and dispatch churn ([D5] bubble-latency fix, step ②).
+  let recheckHandle: number | null = null;
+  const scheduleRecheck = () => {
+    if (recheckHandle !== null) return;
+    recheckHandle = requestAnimationFrame(() => {
+      recheckHandle = null;
+      if (view.isDestroyed) return;
+      view.dispatch(view.state.tr.setMeta(RECHECK, true));
+    });
+  };
   return (lang: string) => {
     const key = lang.toLowerCase().trim();
     if (requested.has(key)) return;
     requested.add(key);
     ensureLanguage(key).then((ok) => {
       if (!ok || view.isDestroyed) return;
-      view.dispatch(view.state.tr.setMeta(RECHECK, true));
+      scheduleRecheck();
     });
   };
 }

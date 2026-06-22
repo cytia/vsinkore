@@ -12,6 +12,12 @@ export type WebviewMessage =
       /** Serialized Markdown after a doc-changing edit, for write-back. */
       type: "edit";
       text: string;
+    }
+  | {
+      /** Open an external link (Ctrl/Cmd+click); the extension validates and
+       *  opens it via vscode.env.openExternal. */
+      type: "openLink";
+      href: string;
     };
 
 /** extension → webview */

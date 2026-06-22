@@ -102,9 +102,10 @@ function ensureColorRule(hex: string): void {
   if (sink) sink.textContent += `.${cls}{color:${hex}}`;
 }
 
-/** Theme switch invalidates color rules (a different palette applies). */
+/** Theme switch invalidates color rules and cached tokens (palette changes). */
 function resetColorRules(): void {
   writtenColors.clear();
+  tokenCache.clear();
   const sink = styleSink();
   if (sink) sink.textContent = "";
 }
@@ -146,18 +147,33 @@ export async function ensureLanguage(lang: string): Promise<boolean> {
   return load;
 }
 
+// Tokenizing with the JS regex engine costs tens to hundreds of ms per call, and
+// buildDecorations re-tokenizes every code block on each RECHECK (one per async
+// language load). Caching by (theme, lang, code) lets unchanged blocks reuse
+// prior results so only a newly-loaded language's blocks actually run Shiki —
+// otherwise the串联 re-tokenizations block the main thread and delay UI like the
+// bubble toolbar's show timer. Bounded so editing can't grow it without limit.
+const TOKEN_CACHE_LIMIT = 256;
+const tokenCache = new Map<string, ShikiToken[][]>();
+
 /**
  * Tokenize code into styled lines. Caller must have awaited ensureLanguage for
  * the same lang; otherwise this returns null (signalling plain-text fallback).
+ * Results are memoized per (theme, lang, code); theme switches clear the cache.
  */
 export function tokenize(code: string, lang: string): ShikiToken[][] | null {
   const key = lang.toLowerCase().trim();
   if (!highlighter || !loadedLangs.has(key)) return null;
+
+  const cacheKey = `${activeTheme}\n${key}\n${code}`;
+  const cached = tokenCache.get(cacheKey);
+  if (cached) return cached;
+
   const { tokens } = highlighter.codeToTokens(code, {
     lang: key,
     theme: activeTheme,
   });
-  return tokens.map((line) =>
+  const result = tokens.map((line) =>
     line.map((t) => {
       const classes: string[] = [];
       if (t.color) {
@@ -171,6 +187,14 @@ export function tokenize(code: string, lang: string): ShikiToken[][] | null {
       return { content: t.content, className: classes.join(" ") };
     }),
   );
+
+  // Evict oldest (insertion order) when full so long edit sessions stay bounded.
+  if (tokenCache.size >= TOKEN_CACHE_LIMIT) {
+    const oldest = tokenCache.keys().next().value;
+    if (oldest !== undefined) tokenCache.delete(oldest);
+  }
+  tokenCache.set(cacheKey, result);
+  return result;
 }
 
 /** Current theme name, so NodeViews can detect a theme change and re-render. */
