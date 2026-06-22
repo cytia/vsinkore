@@ -44,14 +44,26 @@ export function placeBelow(
   el.style.top = `${top}px`;
 }
 
-/** Place `el` to the right of an anchor rect, top edges aligned. */
+/**
+ * Place `el` to the right of an anchor rect, top edges aligned. Flips to the
+ * anchor's left if it would overflow the container's right edge (standard
+ * submenu behavior), and clamps the top so it stays on-screen.
+ */
 export function placeRightOf(
   el: HTMLElement,
   container: HTMLElement,
   anchor: DOMRect,
   gap = 2,
 ): void {
-  const { left, top } = toLocal(container, anchor.right + gap, anchor.top);
+  let { left, top } = toLocal(container, anchor.right + gap, anchor.top);
+  const rightEdge = container.scrollLeft + container.clientWidth - PAD;
+  if (left + el.offsetWidth > rightEdge) {
+    // Not enough room on the right — open to the left of the anchor instead.
+    const flipped = toLocal(container, anchor.left, anchor.top);
+    left = Math.max(0, flipped.left - el.offsetWidth - gap);
+  }
+  const maxTop = container.scrollTop + container.clientHeight - el.offsetHeight - PAD;
+  if (top > maxTop) top = Math.max(0, maxTop);
   el.style.left = `${left}px`;
   el.style.top = `${top}px`;
 }
