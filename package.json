@@ -3,7 +3,7 @@
   "displayName": "vsinkore",
   "description": "WYSIWYG Markdown editing for VSCode, powered by the Inkore editor core.",
   "version": "0.1.0",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "publisher": "inkore",
   "repository": {
     "type": "git",

@@ -30,4 +30,14 @@ text editor instead, right-click the tab → **Reopen Editor With…** → Text 
 ## Scope
 
 Free editing only. No activation, PRO, or export features — those belong to the
-Inkore desktop app. The editor never makes network requests; notes stay local.
+[Inkore desktop app](https://inkore.ink/). The editor never makes network
+requests; notes stay local.
+
+## About Inkore
+
+vsinkore is powered by the editor core of [Inkore](https://inkore.ink/), a
+Markdown knowledge base for writing and organizing your notes. The desktop app
+adds export, themes, and more.
+
+- Website: https://inkore.ink/
+- Downloads & releases: https://github.com/cytia/inkore-releases
