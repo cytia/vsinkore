@@ -136,9 +136,12 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
     const csp = [
       `default-src 'none'`,
       `img-src ${webview.cspSource} https: data:`,
-      // nonce lets the webview fill #shiki-styles with Shiki token colors without
-      // opening unsafe-inline (see [D0-8]); bundled CSS still loads via cspSource.
-      `style-src ${webview.cspSource} 'nonce-${nonce}'`,
+      // KaTeX positions sub/superscripts and fractions with per-element inline
+      // styles, which a nonce/hash style-src cannot cover (they're dynamic), so
+      // style-src must allow 'unsafe-inline'. The Shiki #shiki-styles <style> and
+      // bundled CSS stay allowed under it too. Only style-src relaxes; the script
+      // nonce below is unchanged ([D0-8] [D5-7]).
+      `style-src ${webview.cspSource} 'unsafe-inline'`,
       `font-src ${webview.cspSource}`,
       // The nonce authorizes the entry module; cspSource lets its dynamically
       // imported chunks (Shiki languages, [D0-8]) load from the same origin.
@@ -153,8 +156,9 @@ export class InkoreEditorProvider implements vscode.CustomTextEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="${bundledCssUri}" rel="stylesheet" />
   <link href="${editorCssUri}" rel="stylesheet" />
-  <!-- Pre-authorized (nonce) sink the webview fills with Shiki token color rules. -->
-  <style nonce="${nonce}" id="shiki-styles"></style>
+  <!-- Sink the webview fills with Shiki token color rules (allowed by the
+       style-src 'unsafe-inline' that KaTeX's inline styles also need). -->
+  <style id="shiki-styles"></style>
   <title>Inkore Editor</title>
 </head>
 <body>

@@ -341,7 +341,8 @@ body {
   box-sizing: border-box;
   margin: 0;
   padding: 10px 14px;
-  resize: vertical;
+  /* No native resize handle — it renders as a stark white grip in dark themes. */
+  resize: none;
   font-family: var(--vscode-editor-font-family), monospace;
   font-size: var(--vscode-editor-font-size, 13px);
   line-height: 1.6;

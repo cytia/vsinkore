@@ -44,6 +44,14 @@ export function mountLineGutter(
     return scroller.scrollTop - scroller.getBoundingClientRect().top;
   }
 
+  // Empty paragraphs are real PM nodes (an editable blank line in WYSIWYG) but
+  // markdown-it emits no block for a blank line, so they must not consume a
+  // source-line index — otherwise the zip drifts and trailing blocks lose their
+  // number ([D5-1] assumed node count == block count, which empties break).
+  function isNumberedBlock(node: import("prosemirror-model").Node): boolean {
+    return !(node.type.name === "paragraph" && node.content.size === 0);
+  }
+
   // Rebuild number nodes from the current source-line mapping. Only on doc change.
   function rebuild(): void {
     const lines = collectBlockLines(serialize());
@@ -51,7 +59,8 @@ export function mountLineGutter(
     gutter.textContent = "";
     nums = [];
     let index = 0;
-    view.state.doc.forEach((_node, pos) => {
+    view.state.doc.forEach((node, pos) => {
+      if (!isNumberedBlock(node)) return;
       const lineNo = lines[index++];
       if (lineNo === undefined) return;
       const el = document.createElement("div");
@@ -65,10 +74,12 @@ export function mountLineGutter(
   }
 
   // Cheap path: move existing numbers to their blocks' current tops. On scroll.
+  // Must skip the same empty paragraphs as rebuild so numbers stay aligned.
   function reposition(): void {
     const offset = gutterOffset();
     let index = 0;
-    view.state.doc.forEach((_node, pos) => {
+    view.state.doc.forEach((node, pos) => {
+      if (!isNumberedBlock(node)) return;
       const el = nums[index++];
       if (!el) return;
       el.style.top = `${view.coordsAtPos(pos + 1).top + offset}px`;
